@@ -1,0 +1,73 @@
+---
+title: "figure_1"
+output: html_document
+---
+
+Access: a1dc3b91bf844ea51a5e86368c659cb801e081f6
+```{r}
+
+
+library(tidycensus)
+library(tidyverse)
+library(tigris)
+#census_api_key("a1dc3b91bf844ea51a5e86368c659cb801e081f6", install = TRUE)
+#readRenviron("~/.Renviron")
+options(tigris_use_cache = TRUE)
+library(ggplot2)
+library(tidyr)
+
+# B27010_033 18-34 uninsured
+# B27010_050 35-64 uninsured
+# B27010_001
+
+
+B27010 <- load_variables(2016, "acs5") %>% filter(grepl("B27010", name)) %>% View()
+
+# B19013 <- load_variables(2016, "acs5") %>% filter(grepl("B19013", name)) %>% View()
+# B02001 <- load_variables(2016, "acs5") %>% filter(grepl("B02001", name)) %>% View()
+# B11016 <- load_variables(2016, "acs5") %>% filter(grepl("B11016", name)) %>% View()
+# B08301 <- load_variables(2016, "acs5") %>% filter(grepl("B08301", name)) %>% View()
+# B01001 <- load_variables(2016, "acs5") %>% filter(grepl("B01001", name)) %>% View()
+
+# ny <-  get_acs(geography = "tract",
+#                  variables = c(prp_uninsured ='B27010_001',
+#                                med_income = 'B19013_001',
+#                                prp_white = 'B02001_001',
+#                                prp_hsh_above_3 = 'B11016_001',
+#                                prp_bus = 'B08301_001',
+#                                prp_ppln_above_65 = 'B01001_001'),
+#                  state = 'NY', county = c('New York County', 'Queens',
+#                                           'Kings', 'Bronx',
+#                                           'Richmond'),  
+#                year = 2020, geometry = TRUE, resolution = "20m")
+
+ny_uninsured_tot <- get_acs(geography = "tract",
+                 variables = c('B27010_001'),
+                 state = 'NY', county = c('New York County', 'Queens',
+                                          'Kings', 'Bronx',
+                                          'Richmond'),  
+               year = 2016, survey = 'acs5') %>% select(variable, estimate) %>% group_by(variable) %>% summarize(tot = sum(estimate))
+
+ny_uninsured <- get_acs(geography = "tract",
+                 variables = c('B27010_033', 'B27010_050'),
+                 state = 'NY', county = c('New York County', 'Queens',
+                                          'Kings', 'Bronx',
+                                          'Richmond'),  
+               year = 2016, survey = 'acs5', geometry = TRUE, resolution = "20m") 
+
+ny_uninsured_prop <- pivot_wider(ny_uninsured, names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(estimate = estimate_B27010_033 + estimate_B27010_050) %>% mutate(prop = estimate / ny_uninsured_tot$tot)
+
+# tot_uninsured_1864 <- ny_uninsured %>% select(variable, estimate) %>% group_by(variable) %>% summarize(tot = sum(estimate))
+# 1 B27010_001 8399527
+# 2 B27010_033  409256
+# 3 B27010_050  443735
+# 10.1%
+
+# ggplot(data = ny) + 
+#   geom_sf() + facet_wrap(~variable)
+
+ggplot(data = ny_uninsured_prop, mapping = aes(fill = prop)) + geom_sf(color = "grey", lwd = 0.2) + scale_fill_distiller(palette = "viridis", direction = 1) + theme_void()
+
+```
+
