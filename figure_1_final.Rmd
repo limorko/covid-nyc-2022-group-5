@@ -1,0 +1,204 @@
+---
+title: "Variability in socioeconomic status among different zip codes in NYC."
+authors: "Limor Kohanim & Sushobhan Parajuli"
+date: "6/22/2022"
+output: html_document
+---
+In this document, we will extract data for six different socioeconomic status from United  States  Census  Bureau and plot them for all the zip-codes in New York City.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+We will need an api key to access the census data. Here is our api key.
+
+API: a1dc3b91bf844ea51a5e86368c659cb801e081f6
+```{r}
+#census_api_key("a1dc3b91bf844ea51a5e86368c659cb801e081f6", install = TRUE)
+#readRenviron("~/.Renviron")
+```
+
+First, let's import the libraries we will need.
+```{r}
+library(tidycensus)
+library(tidyverse)
+library(tigris)
+
+options(tigris_use_cache = TRUE)
+library(ggplot2)
+library(tidyr)
+```
+
+Now, we will import the list of all the zip codes in NYC. "nyc_zip_codes" is a csv file that has a column named "ZipCode" that contains all NYC zip codes. This data is available on github, on the same link we use here.
+```{r}
+nyc_zip_codes <- read_csv(
+  "https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv",
+  show_col_types = FALSE)
+```
+
+Let's examine the plots. Before each codes will examine sub codes that we need with load_variables.
+---
+
+Following code plots a heat map for proportion of the 18-64 year olds who are uninsured across all the zip codes in NYC.
+```{r}
+#v1 <- load_variables(2016, "acs5") %>% filter(grepl("B27010", name))
+
+uninsured <- get_acs(geography = "zcta",
+                     variables = c('B27010_018','B27010_034','B27010_033', 'B27010_050'),
+                     state = 'NY', 
+                     year = 2016, 
+                     survey = 'acs5', 
+                     geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = (estimate_B27010_033+estimate_B27010_050)/
+           (estimate_B27010_034+estimate_B27010_018))
+
+uninsured <- uninsured[uninsured$GEOID %in% nyc_zip_codes$ZipCode, ]
+
+plot_1 <- ggplot(data = uninsured, 
+       mapping = aes(fill = uninsured$prop)) + 
+  geom_sf(data = uninsured$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of 18-64 who are uninsured",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+```
+
+Following code plots a heat map for median income across all the zip codes in NYC.
+```{r}
+#v2 <- load_variables(2016, "acs5") %>% filter(grepl("B19013", name))
+
+median_income <- get_acs(geography = "zcta",
+                         variables = 'B19013_001',
+                         state = 'NY',
+                         year = 2016, 
+                         survey = 'acs5',
+                         geometry = TRUE)
+
+median_income <- median_income[median_income$GEOID %in% nyc_zip_codes$ZipCode, ]
+
+plot_2 <- ggplot(data = median_income, 
+       mapping = aes(fill = median_income$estimate / 1000000)) + 
+  geom_sf(data = median_income$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlGn", direction = 1) + 
+  theme_void() +
+  labs(title = "Median income ( in millions, 2016$)",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+```
+
+The next code plots a heat map for proportion of self-identifying whites across all zip codes in NYC.
+```{r}
+# v3 <- load_variables(2016, "acs5") %>% filter(grepl("B02001", name))
+
+selfid_whites <- get_acs(geography = "zcta",
+                 variables = c('B02001_001', 'B02001_002'),
+                 state = 'NY', 
+                 year = 2016, 
+                 survey = 'acs5', 
+                 geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = estimate_B02001_002/estimate_B02001_001)
+
+selfid_whites <- selfid_whites[selfid_whites$GEOID %in% nyc_zip_codes$ZipCode,]
+
+plot_3 <- ggplot(data = selfid_whites,
+       mapping = aes(fill = selfid_whites$prop)) + 
+  geom_sf(data = selfid_whites$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "Purples", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion self-identifying as White",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+```
+
+The next code plots a heat map for proportion in households of 4 or more across all zip codes in NYC. 
+```{r}
+#v4 <- load_variables(2016, "acs5") %>% filter(grepl("B11016", name))
+
+households4 <- get_acs(geography = "zcta", 
+                      variables = c('B11016_001', 'B11016_005', 'B11016_006', 'B11016_007',
+                                    'B11016_008',
+                                    'B11016_013', 'B11016_014', 'B11016_015', 'B11016_016'),
+                      state = 'NY', year = 2016, geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = (estimate_B11016_005+estimate_B11016_006+
+                                      estimate_B11016_007+estimate_B11016_008+
+                                      estimate_B11016_013+estimate_B11016_014+
+                                      estimate_B11016_015+estimate_B11016_016)/estimate_B11016_001)
+
+households4 <- households4[households4$GEOID %in% nyc_zip_codes$ZipCode,]
+
+plot_4 <- ggplot(data = households4,
+       mapping = aes(fill = households4$prop)) +
+  geom_sf(data = households4$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion in households of 4 or more",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+```
+
+Following code plots a heat map for proportion of population that commutes by bus across all zip code in NYC.
+```{r}
+#v5 <- load_variables(2016, "acs5") %>% filter(grepl("B08301", name))
+
+commutebybus <- get_acs(geography = "zcta", 
+                      variables = c('B08301_001', 'B08301_011'),
+                      state = 'NY', year = 2016, geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = estimate_B08301_011 / estimate_B08301_001)
+
+commutebybus <- commutebybus[commutebybus$GEOID %in% nyc_zip_codes$ZipCode,]
+
+plot_5 <- ggplot(data = commutebybus,
+       mapping = aes(fill = commutebybus$prop)) +
+  geom_sf(data = commutebybus$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of population that commutes by bus",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+```
+
+And this final code plots a heat map for proportion of population 65+ years of age across all zip codes in NYC.
+```{r}
+#v6 <- load_variables(2016, "acs5") %>% filter(grepl("B01001", name))
+
+pop65andabove <- get_acs(geography = "zcta", 
+                      variables = c('B01001_001', 'B01001_020', 'B01001_021', 'B01001_022',
+                                        'B01001_023','B01001_024', 'B01001_025', 'B01001_044',
+                                        'B01001_045', 'B01001_046', 'B01001_047',
+                                        'B01001_048', 'B01001_049'),
+                      state = 'NY', year = 2016, geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = (estimate_B01001_020+estimate_B01001_021+estimate_B01001_022+estimate_B01001_023+
+           estimate_B01001_024+estimate_B01001_025+estimate_B01001_044+ estimate_B01001_045+
+           estimate_B01001_046+estimate_B01001_047+estimate_B01001_048+estimate_B01001_049)/estimate_B01001_001)
+
+pop65andabove <- pop65andabove[pop65andabove$GEOID %in% nyc_zip_codes$ZipCode,] %>%
+  filter(prop<0.6)
+
+plot_6 <- ggplot(data = pop65andabove,
+       mapping = aes(fill = pop65andabove$prop)) +
+  geom_sf(data = pop65andabove$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of population 65+ years of age",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+```
+
+We will plot all six plots together with the help of gridExtra.
+```{r}
+library(gridExtra)
+grid.arrange(plot_1, plot_2, plot_3, plot_4, plot_5, plot_6, ncol = 3)
+```
+
+```{r}
+save(data = uninsured, median_income, selfid_whites, households4, commutebybus, pop65andabove, file = "socioeconomic.Rdata")
+```
