@@ -1,0 +1,108 @@
+---
+title: "table_1"
+output: html_document
+---
+
+SETUP
+
+```{r}
+library(tidycensus)
+library(tidyverse)
+library(tigris)
+#census_api_key("a1dc3b91bf844ea51a5e86368c659cb801e081f6", install = TRUE)
+#readRenviron("~/.Renviron")
+options(tigris_use_cache = TRUE)
+library(ggplot2)
+library(tidyr)
+
+nyc_zip_codes <- read_csv("https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv")
+
+tests_by_zcta <- read_csv("https://raw.githubusercontent.com/nychealth/coronavirus-data/097cbd70aa00eb635b17b177bc4546b2fce21895/tests-by-zcta.csv")
+
+load("socioeconomic.Rdata")
+library(scales)
+library(broom)
+library(modelr)
+
+options(na.action = na.warn)
+
+theme_set(theme_bw())
+options(repr.plot.width=4, repr.plot.height=3)
+
+```
+
+Check values and compare with article 
+```{r}
+tests_by_zcta$MODZCTA <- as.character(tests_by_zcta$MODZCTA)
+tests_by_zcta <- mutate(tests_by_zcta, positive_prop = Positive / Total)
+```
+
+```{r}
+# median income
+
+tests_median_income <- inner_join(median_income, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_2 <- lm(positive_prop ~ estimate, data=tests_median_income)
+glance(model_2)
+```
+
+```{r}
+# uninsured proportion of people
+
+tests_uninsured <- inner_join(uninsured, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_1 <- lm(positive_prop ~ prop, data=tests_uninsured)
+glance(model_1)
+```
+
+```{r}
+
+# self-identified as white 
+
+tests_white <- inner_join(selfid_whites, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_3 <- lm(positive_prop ~ prop, data=tests_white)
+glance(model_3)
+```
+
+```{r}
+# household of 4 or more 
+
+tests_households <- inner_join(households4, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_4 <- lm(positive_prop ~ prop, data=tests_households)
+glance(model_4)
+```
+
+```{r}
+
+# population commuting by bus 
+
+test_commutebybus <- inner_join(commutebybus, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_5 <- lm(positive_prop ~ prop, data=test_commutebybus)
+glance(model_5)
+```
+
+```{r}
+# population 65+
+test_pop65andabove <- inner_join(pop65andabove, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_6 <- lm(positive_prop ~ prop, data=test_pop65andabove)
+glance(model_6)
+```
+
+```{r}
+# combine above linear models into one 
+households4 <- select(households4, GEOID, households_prop = prop)
+uninsured <- select(uninsured, GEOID, uninsured_prop = prop)
+selfid_whites <- select(selfid_whites, GEOID, selfid_whites_prop = prop)
+median_income <- select(median_income, GEOID, median_income_est = estimate)
+
+
+#put all data frames into list
+ses <- list(households4, uninsured, selfid_whites, median_income)
+
+#merge all data frames in list
+ses <- ses %>% reduce(full_join, by='GEOID')
+
+test_ses <- inner_join(ses, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model <- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_prop + median_income_est, data=test_ses)
+glance(model)
+tidy(model)
+```
+
