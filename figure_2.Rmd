@@ -1,0 +1,65 @@
+---
+title: "figure_2"
+output: html_document
+---
+Setup 
+```{r}
+library(scales)
+library(knitr)
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+
+```
+
+
+
+Loading mobility data
+```{r}
+load('/data/safegraph/safegraph.Rdata')
+#View(safegraph)
+nyc_zip_codes <- read_csv("https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv")
+```
+
+Getting pre pandemic and postpandemic data 
+```{r}
+safegraph <- safegraph[safegraph$postal_code %in% nyc_zip_codes$ZipCode, ]
+
+pre_pand <- safegraph %>% filter(grepl("2020-02-", date)) 
+View(pre_pand)
+
+post_pand <- safegraph %>% filter(grepl("2020-03-", date) | grepl("2020-04-", date))
+View(post_pand)
+```
+
+Create baselines 
+```{r}
+# BASELINE: What is the typical traffic in each zip --> meadian of average visits per day across all days 
+baselines <- pre_pand %>% group_by(postal_code) %>% summarize(baseline = median(avg_visits_per_day)) %>% filter(baseline != 0)
+View(baselines)
+```
+
+```{r}
+df <- inner_join(post_pand, baselines, "postal_code") 
+df <- df %>% mutate(delta = (avg_visits_per_day - baseline)/baseline) %>% filter(delta>=-1 & delta<=2)
+df2 <- df %>% select(date, delta) %>% arrange(date) %>% group_by(date)%>% 
+  filter(delta == median(delta))
+  
+View(df2)
+
+```
+
+Build the graph
+```{r}
+ggplot(data = df, mapping = aes(x = as.factor(date), y = delta)) +
+  geom_violin()+
+  geom_boxplot(data = df2, fill="red") +
+  #geom_point(data = df2)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+  xlab("Date")+
+  ylab("Change in mobility relative to baseline")
+```
+```{r}
+save(data = baselines, post_pand, df, df2, file = "mobility.Rdata")
+```
+
