@@ -1,6 +1,8 @@
 ---
 title: "table_1"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 SETUP
@@ -92,7 +94,8 @@ households4 <- select(households4, GEOID, households_prop = prop)
 uninsured <- select(uninsured, GEOID, uninsured_prop = prop)
 selfid_whites <- select(selfid_whites, GEOID, selfid_whites_prop = prop)
 median_income <- select(median_income, GEOID, median_income_est = estimate)
-
+commutebybus <- select(commutebybus, GEOID, commutebybus_prop = prop)
+pop65andabove <- select(pop65andabove, GEOID, pop65andabove_prop = prop)
 
 #put all data frames into list
 ses <- list(households4, uninsured, selfid_whites, median_income)
@@ -104,5 +107,8 @@ test_ses <- inner_join(ses, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
 model <- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_prop + median_income_est, data=test_ses)
 glance(model)
 tidy(model)
+```
+```{r}
+save(data = uninsured, median_income, selfid_whites, households4, commutebybus, pop65andabove, file = "testsandses.Rdata")
 ```
 
