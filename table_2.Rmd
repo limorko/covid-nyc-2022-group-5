@@ -1,0 +1,63 @@
+---
+title: "table_2"
+output: html_document
+---
+
+SETUP
+
+```{r}
+library(tidycensus)
+library(tidyverse)
+library(tigris)
+#census_api_key("a1dc3b91bf844ea51a5e86368c659cb801e081f6", install = TRUE)
+#readRenviron("~/.Renviron")
+options(tigris_use_cache = TRUE)
+library(ggplot2)
+library(tidyr)
+
+nyc_zip_codes <- read_csv("https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv")
+
+tests_by_zcta <- read_csv("https://raw.githubusercontent.com/nychealth/coronavirus-data/097cbd70aa00eb635b17b177bc4546b2fce21895/tests-by-zcta.csv")
+
+
+library(scales)
+library(broom)
+library(modelr)
+
+options(na.action = na.warn)
+
+theme_set(theme_bw())
+options(repr.plot.width=4, repr.plot.height=3)
+
+load("mobility.Rdata")
+load("testsandses.Rdata")
+
+```
+
+```{r}
+#Build the model 
+
+#put all data frames into list
+ses <- list(households4, uninsured, selfid_whites, median_income, commutebybus, pop65andabove)
+
+#merge all data frames in list
+ses <- ses %>% reduce(full_join, by='GEOID')
+
+test_ses <- inner_join(ses, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+
+model_ses<- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_prop + median_income_est + commutebybus_prop + pop65andabove_prop, data=test_ses)
+glance(model_ses)
+
+# to only get april 1st mobility change per zipcode, filter df's dates to april 1st
+mobility_changes <- df %>% filter(date == "2020-04-01")
+
+mobility_changes$postal_code <- as.character(mobility_changes$postal_code)
+
+test_ses_mob <- inner_join(test_ses, mobility_changes, by = c("GEOID" = "postal_code"))
+
+model_ses_mob<- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_prop + median_income_est +
+              commutebybus_prop + pop65andabove_prop + delta, data=test_ses_mob)
+glance(model_ses_mob)
+tidy(model_ses_mob)
+```
+
