@@ -1,92 +1,96 @@
 ---
-title: "table_1"
-output:
-  pdf_document: default
-  html_document: default
+
+title: "Regression models for positive COVID cases against each socioeconomic status"
+authors: "Limor Kohanim & Sushobhan Parajuli"
+date: "6/22/2022"
+output: html_document
+
 ---
 
-SETUP
+In this document, we will 
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Let's import libraries first.
 ```{r}
-library(tidycensus)
 library(tidyverse)
-library(tigris)
-#census_api_key("a1dc3b91bf844ea51a5e86368c659cb801e081f6", install = TRUE)
-#readRenviron("~/.Renviron")
-options(tigris_use_cache = TRUE)
-library(ggplot2)
 library(tidyr)
-
-nyc_zip_codes <- read_csv("https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv")
-
-tests_by_zcta <- read_csv("https://raw.githubusercontent.com/nychealth/coronavirus-data/097cbd70aa00eb635b17b177bc4546b2fce21895/tests-by-zcta.csv")
-
-load("socioeconomic.Rdata")
 library(scales)
 library(broom)
 library(modelr)
-
-options(na.action = na.warn)
-
-theme_set(theme_bw())
-options(repr.plot.width=4, repr.plot.height=3)
-
 ```
 
-Check values and compare with article 
+We will also need COVID tests and positive cases out of those tests. The follwing dataset that we use is available on github and has COVID tests and positive cases for all NYC zip codes. This data covers only one day, April 1st 2020. 
+```{r}
+tests_by_zcta <- read_csv(
+  "https://raw.githubusercontent.com/nychealth/coronavirus-data/097cbd70aa00eb635b17b177bc4546b2fce21895/tests-by-zcta.csv",
+  show_col_types = F)
+```
+In order to import the socio economic status datasets, we will load "socioeconomic.Rdata". This file is saved at the end of "figure_1_final.Rmd" and contains all six socioeconomic status datasets that we extracted from census bureau. 
+```{r}
+load("socioeconomic.Rdata")
+```
+
+Next, we will build regression models for proportion of positive COVID cases (positive case per total test case) and compare our r-squared values for each model with the ones in the [original paper](https://onlinelibrary.wiley.com/doi/epdf/10.1111/irv.12816).
+---
+
+Before that, let's change the type of zip codes to character and mutate a new column in the "test_by_zcta" dataset that will store proportion of positive cases.
 ```{r}
 tests_by_zcta$MODZCTA <- as.character(tests_by_zcta$MODZCTA)
 tests_by_zcta <- mutate(tests_by_zcta, positive_prop = Positive / Total)
 ```
 
+We join the "tests_by_zcta" with each socioeconomic status dataset before building the models.
+
+Below is the model against uninsured proportin of 18-64 year old people.
 ```{r}
-# median income
-
-tests_median_income <- inner_join(median_income, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
-model_2 <- lm(positive_prop ~ estimate, data=tests_median_income)
-glance(model_2)
-```
-
-```{r}
-# uninsured proportion of people
-
 tests_uninsured <- inner_join(uninsured, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
 model_1 <- lm(positive_prop ~ prop, data=tests_uninsured)
 glance(model_1)
 ```
+R-squared value with uninsured proportin of 18-64 year old people as the explanatory variabel is 34% compared to 38% in the original paper.
 
+Let's examine the model with median income as the explanatory variable.
 ```{r}
+tests_median_income <- inner_join(median_income, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_2 <- lm(positive_prop ~ estimate, data=tests_median_income)
+glance(model_2)
+```
+R-squared value for the above model is 33% as compared to 32% in the original paper.
 
-# self-identified as white 
-
+The next model is built against the proportion of self-identified white population.
+```{r}
 tests_white <- inner_join(selfid_whites, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
 model_3 <- lm(positive_prop ~ prop, data=tests_white)
 glance(model_3)
 ```
+We get r-squared value of 33% for the model with proportion of self-identified white population compared to 34% in the original paper.
 
+Likewise, the model below uses explanatory variable households of 4 or more.
 ```{r}
-# household of 4 or more 
-
 tests_households <- inner_join(households4, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
 model_4 <- lm(positive_prop ~ prop, data=tests_households)
 glance(model_4)
 ```
+38% of  the  total  variability  by  zip  code  in  COVID-19  positivity  was  ex-plained by a linear relationship with the proportion of the ZIP code living in a household with 4 or more individuals. The original paper reported 41%.  
 
+We use explanatory variable proportion of people using bus for commute in the following model.
 ```{r}
-
-# population commuting by bus 
-
 test_commutebybus <- inner_join(commutebybus, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
 model_5 <- lm(positive_prop ~ prop, data=test_commutebybus)
 glance(model_5)
 ```
+12% of total variability by zip code in COVID-19 positivity was ex-plained by a linear ralationship with the proportion of the zIP code using bus for commute. This was reported to be 13% in the original paper. It appears that very little of variabilty in the response varialbe is due to people's choice to use bus for commute.
 
+Finally, the model with explanatory variable porportion of elderly people also indicated that very little of variability in the COVID-19 positive cases was caused by the proportion of elderly people living in that zip code area.
 ```{r}
-# population 65+
 test_pop65andabove <- inner_join(pop65andabove, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
 model_6 <- lm(positive_prop ~ prop, data=test_pop65andabove)
 glance(model_6)
 ```
+We got r-squared value as same as reported in the original paper, which is 3%, with the model against proportion of elderly people.
 
 ```{r}
 # combine above linear models into one 

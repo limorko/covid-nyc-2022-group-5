@@ -15,7 +15,7 @@ We will need an api key to access the census data. Here is our api key.
 API: a1dc3b91bf844ea51a5e86368c659cb801e081f6
 ```{r}
 #census_api_key("a1dc3b91bf844ea51a5e86368c659cb801e081f6", install = TRUE)
-#readRenviron("~/.Renviron")
+readRenviron("~/.Renviron")
 ```
 
 First, let's import the libraries we will need.
@@ -196,8 +196,10 @@ plot_6 <- ggplot(data = pop65andabove,
 We will plot all six plots together with the help of gridExtra.
 ```{r}
 library(gridExtra)
-grid.arrange(plot_1, plot_2, plot_3, plot_4, plot_5, plot_6, ncol = 3)
+grid.arrange(plot_1, plot_2, plot_3, plot_4, plot_5, plot_6,
+             ncol = 3)
 ```
+Figure : Maps of six explanatory variables used in this study as measured of SES characteristics of ZIP codes
 
 ```{r}
 save(data = uninsured, median_income, selfid_whites, households4, commutebybus, pop65andabove, file = "socioeconomic.Rdata")
