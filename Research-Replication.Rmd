@@ -1,0 +1,316 @@
+---
+title: "MSR-DS3 Research Replication"
+author: "Limor Kohanim & Sushobhan Parajuli"
+date: "6/24/2022"
+output: 
+  html_document:
+    toc: true
+    theme: darkly
+---
+
+```{r setup}
+suppressMessages(library(tidyverse))
+suppressMessages(library(lubridate))
+suppressMessages(library(ggplot2))
+suppressMessages(library(modelr))
+suppressMessages(library(broom))
+suppressMessages(library(gridExtra))
+suppressMessages(library(scales))
+suppressMessages(library(tigris))
+options(tigris_use_cache = TRUE)
+```
+
+## Differential COVID-19 case positivity in New York City neighborhoods: Socioeconomic factors and mobility
+#### Click for the [ORIGINAL ARTICLE](https://onlinelibrary.wiley.com/doi/epdf/10.1111/irv.12816)
+
+## Overview of the article
+The article written during early stages of COVID-19 pandemic studied different socioeconomic factors and COVID-19 positive cases in New York City (NYC) by Zip codes. The study examined the extent to which the varibility in ZIP code-level case positivity can be explained by socioeconomic factors and daily change in mobility. The study reported that the socioeconomic factors considered together explained 56% of the variability in case positivity through April 1. Further, the study analyzed effects of socioeconomic factors on case positivity after addition of changes in mobility and reported that changes in mobility were not likely to be acting as mediator, they analyzed this by comparing R-squared values in the multivariable linear regression model with changes in mobilty as a feature with the multivariable linear regression model without changes in variability. 
+
+The socioeconomic factors reported are proportion of the 18 to 64 year-old population that is uninsured, median household income(in 2016 dollars), proportion of population living in households with more than three inhabitants, proportion of population using public transportation to commute to work that includes bus travel, and proportion of population that is elderly (65+ years of age).
+
+In this notebook, we are trying to replicate these finding and achieve similar results. We analyze the variability in Zip code-level case positivity resulted by an each socioeconomic factor alone, and by socioeconomic factors considered together without and with changes and mobility. We take six socioeconomic factors that are used in the article and plot heat maps for each. We plot distribution of changes in mobility per day for March and April of 2020 in violin plots and examine its trend. 
+
+## Data
+
+We extracted data for socioeconomic status from United  States  Census  Bureau and saved it in an Rdata file *socioeconomic.Rdata*. You can access the code [here](https://github.com/msr-ds3/covid-nyc-2022-group-5/blob/main/figure_1_final.Rmd).
+
+We accessed the list of NYC Zip codes from [here]("https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv").
+
+We used [this]("https://raw.githubusercontent.com/nychealth/coronavirus-data/097cbd70aa00eb635b17b177bc4546b2fce21895/tests-by-zcta.csv") dataset to access COVID-19 tests and positive cases for all NYC zip codes.
+
+We accessed mobility data from our R studio server and it is not publicly available.
+
+```{r Data}
+# Load Rdata files
+
+load("socioeconomic.Rdata")
+load("mobility.Rdata")
+
+# Get zip codes
+
+nyc_zip_codes <- read_csv(
+  "https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv", show_col_types = FALSE)
+
+# Get COVID-19 data
+
+tests_by_zcta <- read_csv(
+  "https://raw.githubusercontent.com/nychealth/coronavirus-data/097cbd70aa00eb635b17b177bc4546b2fce21895/tests-by-zcta.csv", show_col_types = F)
+```
+
+## Variability in socioeconomic status among different zip codes in NYC
+
+We replicate heat maps from the original article that shows how socioeconomic factors vary among Zip codes in NYC.
+
+The resulting plot looks identical to the one plotted in article. 
+
+### Heat maps for soceoeconomic factors
+
+```{r heat-maps}
+# Plot for proportion of uninsured population
+plot_1 <- ggplot(data = uninsured, 
+       mapping = aes(fill = uninsured$prop)) + 
+  geom_sf(data = uninsured$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of 18-64 who are uninsured",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+# Plot for median income
+plot_2 <- ggplot(data = median_income, 
+       mapping = aes(fill = median_income$estimate)) + 
+  geom_sf(data = median_income$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlGn", direction = 1) +
+  theme_void() +
+  labs(title = "Median income (in millions, 2016$)",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+# Plot for proportion of self-identifying as white
+plot_3 <- ggplot(data = selfid_whites,
+       mapping = aes(fill = selfid_whites$prop)) + 
+  geom_sf(data = selfid_whites$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "Purples", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion self-identifying as white",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+# Plot for proportion in households of 4 or more
+plot_4 <- ggplot(data = households4,
+       mapping = aes(fill = households4$prop)) +
+  geom_sf(data = households4$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion in households of 4 or more",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+# Plot for proportion of population that commutes by bus
+plot_5 <- ggplot(data = commutebybus,
+       mapping = aes(fill = commutebybus$prop)) +
+  geom_sf(data = commutebybus$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of population that commutes by bus",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+# Plot for proportion of elderly population
+plot_6 <- ggplot(data = pop65andabove,
+       mapping = aes(fill = pop65andabove$prop)) +
+  geom_sf(data = pop65andabove$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of population 65+ years of age",
+       fill = "") +
+  theme(plot.title = element_text(size=8))
+
+grid.arrange(plot_1, plot_2, plot_3, plot_4, plot_5, plot_6,
+             ncol = 3)
+```
+
+## Simple Linear Regression models for COVID-19 positive cases
+
+Now, we build models for COVID-19 positive cases where we take each socioeconomic status as our feature.
+
+First, let's change the type of zip codes to character and mutate a new column in the *test_by_zcta* dataset that will store proportion of positive cases.
+
+```{r}
+tests_by_zcta$MODZCTA <- as.character(tests_by_zcta$MODZCTA)
+tests_by_zcta <- mutate(tests_by_zcta, positive_prop = Positive / Total)
+```
+
+### Feature: proportion of 18-64 who are uninsured
+
+```{r}
+tests_uninsured <- inner_join(uninsured, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_1 <- lm(positive_prop ~ prop, data=tests_uninsured)
+glance(model_1)
+```
+
+R-squared value with uninsured proportin of 18-64 year old people as the explanatory variabel is 34% compared to 38% in the original paper.
+
+### Feature: median income
+
+```{r}
+tests_median_income <- inner_join(median_income, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_2 <- lm(positive_prop ~ estimate, data=tests_median_income)
+glance(model_2)
+```
+
+R-squared value for the above model is 33% as compared to 32% in the original paper.
+
+### Feature: proportion self-identifying as white
+
+```{r}
+tests_white <- inner_join(selfid_whites, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_3 <- lm(positive_prop ~ prop, data=tests_white)
+glance(model_3)
+```
+
+We get R-squared value of 33% for the model with proportion of self-identified white population compared to 34% in the original paper.
+
+### Feature: proportion in households of 4 or more
+
+```{r}
+tests_households <- inner_join(households4, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_4 <- lm(positive_prop ~ prop, data=tests_households)
+glance(model_4)
+```
+
+38% of  the  total  variability  by  zip  code  in  COVID-19  positivity  is  explained by a linear relationship with the proportion of the zip code living in a household with 4 or more individuals. The original paper reported 41%.  
+
+### Feature: proportion of population that commuts by bus
+
+```{r}
+test_commutebybus <- inner_join(commutebybus, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_5 <- lm(positive_prop ~ prop, data=test_commutebybus)
+glance(model_5)
+```
+
+12% of total variability by zip code in COVID-19 positivity is explained by a linear ralationship with the proportion of the zip code using bus for commute. This was reported to be 13% in the original paper.
+
+### Feature: proportion of population 65+ years of age
+
+```{r}
+test_pop65andabove <- inner_join(pop65andabove, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+model_6 <- lm(positive_prop ~ prop, data=test_pop65andabove)
+glance(model_6)
+```
+
+We get R-squared value as same as reported in the original paper, which is 3%, with the model against proportion of elderly people. It appears that very little of variabilty in the response varialbe is due to people's choice to use bus for commute.
+
+## Multivariable Regression model for COVID-19 positive cases
+
+We build a multivariable regression model for COVID-19 positive cases where we take four out of six socioeconomic factors as our features. As done in the original article, we add variables in decreasing order of their R-squared value. We add proportion  living  in  households  with  four  or  more  indi-viduals, proportion of adults who were uninsured, proportion iden-tifying as white, and median household income. Further addition of variables results in marginal changes.
+
+### Features: proportion  living  in  households  with  four  or  more  individuals, proportion of adults who were uninsured, proportion identifying as white, and median household income
+
+```{r}
+# Select the column containing features from the data sets 
+households4 <- select(households4, GEOID, households_prop = prop)
+uninsured <- select(uninsured, GEOID, uninsured_prop = prop)
+selfid_whites <- select(selfid_whites, GEOID, selfid_whites_prop = prop)
+median_income <- select(median_income, GEOID, median_income_est = estimate)
+commutebybus <- select(commutebybus, GEOID, commutebybus_prop = prop)
+pop65andabove <- select(pop65andabove, GEOID, pop65andabove_prop = prop)
+
+# Merge all in a dataframe and join with the COVID-19 positive tests data set 
+ses <- list(households4, uninsured, selfid_whites, median_income)
+ses <- ses %>% reduce(full_join, by='GEOID')
+test_ses <- inner_join(ses, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+
+# Build the model
+model <- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_prop + median_income_est, data=test_ses)
+```
+
+```{r}
+glance(model)
+```
+
+R-squared value for our multivariable regression model is 55% compared to 56% in the original article.
+
+```{r}
+tidy(model)
+```
+
+The estimates from our multivariable model are close to what the original paper reported.
+
+## Change in mobility relative to baseline
+
+Next, we plot the second plot from the article. The plot contains violin plolt for each day in March and April of 2020. The violins represent distribution of mobility on that day. Mobility is definied as the movement of people to point of interests (POI). We take median of average visits per day (to POIs) from pre-pandemic as our baseline. The we calcualte change in mobility in a day relative to the baseline. Here, we could access the data for only February to model our baseline, however the article uses data from September to February. This could lead to changes in our plot, however it should produce similar trend.
+
+The data for baselines and post-pandemic mobility are saved in the file *mobility.Rdata*. 
+
+### Plot for change in mobility relative to baseline
+
+```{r}
+ggplot() +
+  geom_violin(data = mobility, 
+              mapping = aes(x = as.factor(date), y = delta),
+              color = "orange", 
+              trim = F)+
+  geom_pointrange(data = mobility_summary,
+                  mapping = aes(x = as.factor(date),
+                                ymin = twentyfive_delta,
+                                y = median_delta,
+                                ymax = seventyfive_delta),
+                  color ="red", 
+                  size = 0.1) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  xlab("Date")+
+  ylab("Change in mobility relative to baseline")
+```
+
+The plot follows a similar trend as in the original article. The change in mobility starts decreasing as we move along the dates.
+
+## Effect of change in mobility
+
+Now we examine if there was any effect of change in mobility. First we build a multivariable regression model with six socioeconomic factors as features, then we build another multivariable regression model with six socioeconomic factors and change in mobility as features. The original paper reported that there is no effect of this variable to the COVID-19 positive cases based on R-squared vlues. 
+
+### Features: all six socioeconomic factors
+
+```{r}
+#put all data frames into list
+ses <- list(households4, uninsured, selfid_whites, median_income, commutebybus, pop65andabove)
+
+#merge all data frames in list
+ses <- ses %>% reduce(full_join, by='GEOID')
+
+test_ses <- inner_join(ses, tests_by_zcta, by = c("GEOID" = "MODZCTA"))
+
+model_ses<- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_prop + median_income_est + commutebybus_prop + pop65andabove_prop, data=test_ses)
+```
+
+```{r}
+glance(model_ses)
+```
+
+### Features: all six socioeconomic factors and change in mobility
+
+```{r}
+# Get april 1st mobility change per zipcode, filter mobility's dates to april 1st
+
+mobility_changes <- mobility %>% filter(date == "2020-04-01")
+
+# Add zip codes/postal codes to mobility_changes
+
+mobility_changes$postal_code <- as.character(mobility_changes$postal_code)
+
+test_ses_mob <- inner_join(test_ses, mobility_changes, by = c("GEOID" = "postal_code"))
+
+model_ses_mob<- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_prop + median_income_est + commutebybus_prop + pop65andabove_prop + delta, data=test_ses_mob)
+```
+
+```{r}
+glance(model_ses_mob)
+```
+
+### Comparing R-squared values
+
+We find out that R-squared value for the model without change in mobility feature is 56% (57% in the original article). And after the addition of this feature, we still get the R-squared value of 56% (57% in the original article). Even though there is no considerable difference in these two multivariable models based on their R-squared values, we cannot conclude that change in mobility did not affect the COVID-19 positive cases. That is something the original article points out to claim that there is no effect. 
+
+## Conclusion and Questions
+
+The original article did right calculations mostly, however its claim of change in mobility did not affect COVID-19 positive cases is misleading. The features studied seem to be less predictive because we obtain a model with low R-squared value. Doing more research on what factors might affect the COVID-19 positive cases and integrating them in the model could increase the predicitability or explain more variability in the response variable. Given the original research was conducted early in the pandemic, there might not have been sufficient information and data to conduct this research. And if we were to gather recent data we will need to consider other factors such as proportion of vaccinated population, which was absent during early months of the pandemic. We believe this factor alone would bring significant change in the model. We are also curious to know how this model would perform with more recent data on COVID-19 positive cases. It will also be interesting to understand variability on COVID-19 cases due to other means of transportation, for example majority of people in NYC commute by subway trains.
