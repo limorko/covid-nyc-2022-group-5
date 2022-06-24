@@ -1,0 +1,92 @@
+---
+title: "Change in mobility relative to baseline"
+authors: "Limor Kohanim & Sushobhan Parajuli"
+date: "6/23/2022"
+output: html_document
+---
+
+In this document, we will plot the violin plot in figure 2 from the paper.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Loading mobility data
+```{r}
+load('/data/safegraph/safegraph.Rdata')
+```
+
+```{r}
+nyc_zip_codes <- read_csv(
+  "https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv",
+  show_col_types = FALSE)
+```
+
+
+```{r}
+safegraph <- safegraph%>%
+  left_join(nyc_zip_codes, by=c("postal_code"="ZipCode"))
+safegraph
+```
+
+Getting pre pandemic and postpandemic data 
+```{r}
+pre_pand <- safegraph %>% filter(grepl("2020-02-", date)) 
+#View(pre_pand)
+
+post_pand <- safegraph %>% filter(grepl("2020-03-", date) | grepl("2020-04-", date))
+#View(post_pand)
+```
+
+Create baselines 
+```{r}
+# BASELINE: What is the typical traffic in each zip --> meadian of average visits per day across all days 
+library(tidyverse)
+library(lubridate)
+
+baselines <- pre_pand %>%
+  group_by(postal_code) %>%
+  summarize(baseline = median(avg_visits_per_day)) %>%
+  filter(baseline != 0)
+
+baselines
+```
+```{r}
+mobility <- inner_join(post_pand, baselines, "postal_code") 
+mobility <- mobility %>% 
+  mutate(delta = (avg_visits_per_day - baseline)/baseline) %>% 
+  filter(delta>=-1 & delta<=2) %>% 
+  arrange(desc(date))
+
+mobility_summary <- df %>% 
+  select(date, delta) %>% 
+  group_by(date)%>% 
+  summarize(median_delta = median(delta),
+            twentyfive_delta = quantile(delta, 0.25), 
+            seventyfive_delta = quantile(delta, 0.75)) %>% 
+  arrange(desc(date))
+
+mobility_summary
+```
+
+Build the graph
+```{r}
+ggplot() +
+  geom_violin(data = mobility, 
+              mapping = aes(x = as.factor(date), y = delta),
+              color = "orange", 
+              trim = F)+
+  geom_point(data = mobility_summary,
+                  mapping = aes(x = as.factor(date),
+                                y = median_delta),
+                  color ="red", 
+                  size = 0.5) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  xlab("Date")+
+  ylab("Change in mobility relative to baseline")+
+  coord_flip()
+```
+
+```{r}
+save(data = baselines, post_pand, mobility, mobility_summary, file = "mobility.Rdata")
+```
