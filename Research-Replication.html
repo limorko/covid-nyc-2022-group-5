@@ -195,7 +195,7 @@ pre code {
 <li><a href="#change-in-mobility-relative-to-baseline">Change in mobility relative to baseline</a><ul>
 <li><a href="#plot-for-change-in-mobility-relative-to-baseline">Plot for change in mobility relative to baseline</a></li>
 </ul></li>
-<li><a href="#effect-of-change-in-mobility">Effect of change in mobility</a><ul>
+<li><a href="#effect-due-to-change-in-mobility">Effect due to change in mobility</a><ul>
 <li><a href="#features-all-six-socioeconomic-factors">Features: all six socioeconomic factors</a></li>
 <li><a href="#features-all-six-socioeconomic-factors-and-change-in-mobility">Features: all six socioeconomic factors and change in mobility</a></li>
 <li><a href="#comparing-r-squared-values">Comparing R-squared values</a></li>
@@ -221,7 +221,7 @@ options(tigris_use_cache = TRUE)</code></pre>
 </div>
 <div id="overview-of-the-article" class="section level2">
 <h2>Overview of the article</h2>
-<p>The article written during early stages of COVID-19 pandemic studied different socioeconomic factors and COVID-19 positive cases in New York City (NYC) by Zip codes. The study examined the extent to which the varibility in ZIP code-level case positivity can be explained by socioeconomic factors and daily change in mobility. The study reported that the socioeconomic factors considered together explained 56% of the variability in case positivity through April 1. Further, the study analyzed effects of socioeconomic factors on case positivity after addition of changes in mobility and reported that changes in mobility were not likely to be acting as mediator, they analyzed this by comparing R-squared values in the multivariable linear regression model with changes in mobilty as a feature with the multivariable linear regression model without changes in variability.</p>
+<p>The article written during early stages of COVID-19 pandemic studied different socioeconomic factors and COVID-19 positive cases in New York City (NYC) by Zip codes. The study examined the extent to which the variability in Zip code-level case positivity can be explained by socioeconomic factors and daily change in mobility. The study reported that the socioeconomic factors considered together explained 56% of the variability in case positivity through April 1. Further, the study analyzed effects of socioeconomic factors on case positivity after addition of changes in mobility and reported that changes in mobility were not likely to be acting as mediator, they analyzed this by comparing R-squared values in the multivariable linear regression model with changes in mobilty as a feature with the multivariable linear regression model without changes in variability.</p>
 <p>The socioeconomic factors reported are proportion of the 18 to 64 year-old population that is uninsured, median household income(in 2016 dollars), proportion of population living in households with more than three inhabitants, proportion of population using public transportation to commute to work that includes bus travel, and proportion of population that is elderly (65+ years of age).</p>
 <p>In this notebook, we are trying to replicate these finding and achieve similar results. We analyze the variability in Zip code-level case positivity resulted by an each socioeconomic factor alone, and by socioeconomic factors considered together without and with changes and mobility. We take six socioeconomic factors that are used in the article and plot heat maps for each. We plot distribution of changes in mobility per day for March and April of 2020 in violin plots and examine its trend.</p>
 </div>
@@ -320,8 +320,9 @@ grid.arrange(plot_1, plot_2, plot_3, plot_4, plot_5, plot_6,
 <div id="simple-linear-regression-models-for-covid-19-positive-cases" class="section level2">
 <h2>Simple Linear Regression models for COVID-19 positive cases</h2>
 <p>Now, we build models for COVID-19 positive cases where we take each socioeconomic status as our feature.</p>
-<p>First, let's change the type of zip codes to character and mutate a new column in the <em>test_by_zcta</em> dataset that will store proportion of positive cases.</p>
-<pre class="r"><code>tests_by_zcta$MODZCTA &lt;- as.character(tests_by_zcta$MODZCTA)
+<pre class="r"><code># First, let's change the type of zip codes to character and mutate a new column in the test_by_zcta dataset that will store proportion of positive cases.
+
+tests_by_zcta$MODZCTA &lt;- as.character(tests_by_zcta$MODZCTA)
 tests_by_zcta &lt;- mutate(tests_by_zcta, positive_prop = Positive / Total)</code></pre>
 <div id="feature-proportion-of-18-64-who-are-uninsured" class="section level3">
 <h3>Feature: proportion of 18-64 who are uninsured</h3>
@@ -437,7 +438,7 @@ model &lt;- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_
 </div>
 <div id="change-in-mobility-relative-to-baseline" class="section level2">
 <h2>Change in mobility relative to baseline</h2>
-<p>Next, we plot the second plot from the article. The plot contains violin plolt for each day in March and April of 2020. The violins represent distribution of mobility on that day. Mobility is definied as the movement of people to point of interests (POI). We take median of average visits per day (to POIs) from pre-pandemic as our baseline. The we calcualte change in mobility in a day relative to the baseline. Here, we could access the data for only February to model our baseline, however the article uses data from September to February. This could lead to changes in our plot, however it should produce similar trend.</p>
+<p>Next, we plot the second plot from the article. The plot contains violin plolt for each day in March and April of 2020. The violins represent distribution of mobility on that day. Mobility is definied as the movement of people to point of interests (POI). We take median of average visits per day (to POIs) from pre-pandemic as our baseline. Then we calcualte change in mobility in a day relative to the baseline. Here, we could access the data for only February to model our baseline, however the article uses data from September to February. This could lead to changes in our plot, however it should produce similar trend.</p>
 <p>The data for baselines and post-pandemic mobility are saved in the file <em>mobility.Rdata</em>.</p>
 <div id="plot-for-change-in-mobility-relative-to-baseline" class="section level3">
 <h3>Plot for change in mobility relative to baseline</h3>
@@ -460,9 +461,9 @@ model &lt;- lm(positive_prop ~ households_prop + uninsured_prop + selfid_whites_
 <p>The plot follows a similar trend as in the original article. The change in mobility starts decreasing as we move along the dates.</p>
 </div>
 </div>
-<div id="effect-of-change-in-mobility" class="section level2">
-<h2>Effect of change in mobility</h2>
-<p>Now we examine if there was any effect of change in mobility. First we build a multivariable regression model with six socioeconomic factors as features, then we build another multivariable regression model with six socioeconomic factors and change in mobility as features. The original paper reported that there is no effect of this variable to the COVID-19 positive cases based on R-squared vlues.</p>
+<div id="effect-due-to-change-in-mobility" class="section level2">
+<h2>Effect due to change in mobility</h2>
+<p>Now we examine if there was any effect in the model as we add change in mobility. First we build a multivariable regression model with six socioeconomic factors as features, then we build another multivariable regression model with six socioeconomic factors and change in mobility as features. The original paper reported that there is no effect of this variable to the COVID-19 positive cases based on R-squared vlues.</p>
 <div id="features-all-six-socioeconomic-factors" class="section level3">
 <h3>Features: all six socioeconomic factors</h3>
 <pre class="r"><code>#put all data frames into list
