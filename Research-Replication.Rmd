@@ -199,7 +199,7 @@ model_6 <- lm(positive_prop ~ prop, data=test_pop65andabove)
 glance(model_6)
 ```
 
-We get R-squared value as same as reported in the original paper, which is 3%, with the model against proportion of elderly people. It appears that very little of variabilty in the response varialbe is due to people's choice to use bus for commute.
+We get R-squared value as same as reported in the original paper, which is 3%, with the model against proportion of elderly people.
 
 ## Multivariable Regression model for COVID-19 positive cases
 
