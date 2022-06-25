@@ -1,0 +1,204 @@
+---
+title: "figure_1"
+output: html_document
+---
+
+Access: a1dc3b91bf844ea51a5e86368c659cb801e081f6
+
+Setup
+```{r}
+library(tidycensus)
+library(tidyverse)
+library(tigris)
+#census_api_key("a1dc3b91bf844ea51a5e86368c659cb801e081f6", install = TRUE)
+#readRenviron("~/.Renviron")
+options(tigris_use_cache = TRUE)
+library(ggplot2)
+library(tidyr)
+
+nyc_zip_codes <- read_csv("https://raw.githubusercontent.com/erikgregorywebb/nyc-housing/master/Data/nyc-zip-codes.csv")
+
+```
+
+Figure 1
+
+Proportion of the 18- to 64-year-old population that is uninsured 
+```{r}
+
+# B27010_033 18-34 uninsured
+# B27010_050 35-64 uninsured
+# B27010_001
+
+
+#v1 <- load_variables(2016, "acs5") %>% filter(grepl("B27010", name))
+
+
+uninsured <- get_acs(geography = "zcta",
+                     variables = c('B27010_018','B27010_034','B27010_033', 'B27010_050'),
+                     state = 'NY', 
+                     year = 2016, 
+                     survey = 'acs5', 
+                     geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop_uninsured = (estimate_B27010_033+estimate_B27010_050)/
+           (estimate_B27010_034+estimate_B27010_018))
+uninsured <- uninsured[uninsured$GEOID %in% nyc_zip_codes$ZipCode, ]
+
+ggplot(data = uninsured, 
+       mapping = aes(fill = uninsured$prop_uninsured)) + 
+  geom_sf(data = uninsured$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of 18-64 who are uninsured",
+       fill = "")
+
+# where estimates were 0 we get NaN, so we substituted them with 0s
+#ny_uninsured <- ny_uninsured %>% mutate(prop = ifelse(is.na(prop), 0, prop))
+
+
+# summary(uninsured)
+# Median :0.13636 
+
+```
+
+Median Income
+```{r}
+#v2 <- load_variables(2016, "acs5") %>% filter(grepl("B19013", name))
+median_income <- get_acs(geography = "zcta",
+                         variables = 'B19013_001',
+                         state = 'NY',
+                         year = 2016, 
+                         survey = 'acs5',
+                         geometry = TRUE)
+
+median_income <- median_income[median_income$GEOID %in% nyc_zip_codes$ZipCode, ]
+ggplot(data = median_income, 
+       mapping = aes(fill = median_income$estimate / 1000000)) + 
+  geom_sf(data = median_income$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlGn", direction = 1) + 
+  theme_void() +
+  labs(title = "Median income ( in millions, 2016$)",
+       fill = "")
+
+# summary(median_income)
+# Median : 59520
+# Mean   : 65200
+```
+
+Proportion of popuation that self-itentified as White
+```{r}
+
+# v3 <- load_variables(2016, "acs5") %>% filter(grepl("B02001", name))
+# View(v3)
+
+# B02001_001 -> tot
+# B02001_002 -> white
+
+si_whites <- get_acs(geography = "zcta",
+                 variables = c('B02001_001', 'B02001_002'),
+                 state = 'NY', 
+                 year = 2016, 
+                 survey = 'acs5', 
+                 geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = estimate_B02001_002/estimate_B02001_001)
+si_whites <- si_whites[si_whites$GEOID %in% nyc_zip_codes$ZipCode,]
+
+ggplot(data = si_whites,
+       mapping = aes(fill = si_whites$prop)) + 
+  geom_sf(data = si_whites$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "Purples", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion self-identifying as White",
+       fill = "")
+
+# summary(si_whites) 
+# Median :0.48270  
+# Mean: 0.46694
+```
+
+Proportion in household of 4 or more 
+```{r}
+#v4 <- load_variables(2016, "acs5") %>% filter(grepl("B11016", name))
+View(v4)
+
+
+households <- get_acs(geography = "zcta", 
+                      variables = c('B11016_001', 'B11016_005', 'B11016_006', 'B11016_007',
+                                    'B11016_008',
+                                    'B11016_013', 'B11016_014', 'B11016_015', 'B11016_016'),
+                      state = 'NY', year = 2016, geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = (estimate_B11016_005+estimate_B11016_006+
+                                      estimate_B11016_007+estimate_B11016_008+
+                                      estimate_B11016_013+estimate_B11016_014+
+                                    estimate_B11016_015+estimate_B11016_016)/estimate_B11016_001)
+households <- households[households$GEOID %in% nyc_zip_codes$ZipCode,]
+
+ggplot(data = households,
+       mapping = aes(fill = households$prop)) +
+  geom_sf(data = households$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion in households of 4 or more",
+       fill = "")
+
+# summary(households)
+# Median :0.2441 
+```
+
+Proportion of population that commutes by bus 
+```{r}
+#B08301
+#v5 <- load_variables(2016, "acs5") %>% filter(grepl("B08301", name))
+
+# B08301_011 bus
+# B08301_001 tot
+commutebybus <- get_acs(geography = "zcta", 
+                      variables = c('B08301_001', 'B08301_011'),
+                      state = 'NY', year = 2016, geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = estimate_B08301_011 / estimate_B08301_001)
+
+commutebybus <- commutebybus[commutebybus$GEOID %in% nyc_zip_codes$ZipCode,]
+
+ggplot(data = commutebybus,
+       mapping = aes(fill = commutebybus$prop)) +
+  geom_sf(data = commutebybus$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of population that commutes by bus",
+       fill = "")
+# summary(commutebybus)
+# Median :0.09612  
+```
+
+Proportion of population 65+ years of age
+```{r}
+#v6 <- load_variables(2016, "acs5") %>% filter(grepl("B01001", name))
+
+
+# total B01001_001
+pop65andabove <- get_acs(geography = "zcta", 
+                      variables = c('B01001_001', 'B01001_020', 'B01001_021', 'B01001_022',
+                                        'B01001_023','B01001_024', 'B01001_025', 'B01001_044',
+                                        'B01001_045', 'B01001_046', 'B01001_047',
+                                        'B01001_048', 'B01001_049'),
+                      state = 'NY', year = 2016, geometry = TRUE) %>%
+  pivot_wider(names_from = variable, values_from = c(estimate, moe)) %>%
+  mutate(prop = (estimate_B01001_020+estimate_B01001_021+estimate_B01001_022+estimate_B01001_023+
+           estimate_B01001_024+estimate_B01001_025+estimate_B01001_044+ estimate_B01001_045+
+           estimate_B01001_046+estimate_B01001_047+estimate_B01001_048+estimate_B01001_049)/estimate_B01001_001)
+pop65andabove <- pop65andabove[pop65andabove$GEOID %in% nyc_zip_codes$ZipCode,]
+
+ggplot(data = pop65andabove,
+       mapping = aes(fill = pop65andabove$prop)) +
+  geom_sf(data = pop65andabove$geometry, color = "gray", lwd = 0.1) + 
+  scale_fill_distiller(palette = "YlOrRd", direction = 1) + 
+  theme_void() +
+  labs(title = "Proportion of population 65+ years of age",
+       fill = "")
+# summary(pop65andabove)
+# Median :0.1251
+```
+
