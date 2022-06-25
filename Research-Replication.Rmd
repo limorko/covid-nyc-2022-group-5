@@ -28,7 +28,7 @@ The article written during early stages of COVID-19 pandemic studied different s
 
 The socioeconomic factors reported are proportion of the 18 to 64 year-old population that is uninsured, median household income(in 2016 dollars), proportion of population living in households with more than three inhabitants, proportion of population using public transportation to commute to work that includes bus travel, and proportion of population that is elderly (65+ years of age).
 
-In this notebook, we are trying to replicate these finding and achieve similar results. We analyze the variability in Zip code-level case positivity resulted by an each socioeconomic factor alone, and by socioeconomic factors considered together without and with changes and mobility. We take six socioeconomic factors that are used in the article and plot heat maps for each. We plot distribution of changes in mobility per day for March and April of 2020 in violin plots and examine its trend. 
+In this notebook, we are trying to replicate these finding and achieve similar results. We analyze the variability in Zip code-level case positivity resulted by an each socioeconomic factor alone, and by socioeconomic factors considered together without and with changes in mobility. We take six socioeconomic factors that are used in the article and plot heat maps for each. We plot distribution of changes in mobility per day for March and April of 2020 in violin plots and examine its trend. 
 
 ## Data
 
@@ -61,7 +61,7 @@ tests_by_zcta <- read_csv(
 
 We replicate heat maps from the original article that shows how socioeconomic factors vary among Zip codes in NYC.
 
-The resulting plot looks identical to the one plotted in article. 
+The resulting plot looks identical to the one plotted in the original article. 
 
 ### Heat maps for soceoeconomic factors
 
@@ -203,7 +203,7 @@ We get R-squared value as same as reported in the original paper, which is 3%, w
 
 ## Multivariable Regression model for COVID-19 positive cases
 
-We build a multivariable regression model for COVID-19 positive cases where we take four out of six socioeconomic factors as our features. As done in the original article, we add variables in decreasing order of their R-squared value. We add proportion  living  in  households  with  four  or  more  indi-viduals, proportion of adults who were uninsured, proportion iden-tifying as white, and median household income. Further addition of variables results in marginal changes.
+We build a multivariable regression model for COVID-19 positive cases where we take four out of six socioeconomic factors as our features. As done in the original article, we add variables in decreasing order of their R-squared value. We add proportion  living  in  households  with  four  or  more  individuals, proportion of adults who were uninsured, proportion iden-tifying as white, and median household income. Further addition of variables results in marginal changes.
 
 ### Features: proportion  living  in  households  with  four  or  more  individuals, proportion of adults who were uninsured, proportion identifying as white, and median household income
 
@@ -240,8 +240,6 @@ The estimates from our multivariable model are close to what the original paper 
 ## Change in mobility relative to baseline
 
 Next, we plot the second plot from the article. The plot contains violin plolt for each day in March and April of 2020. The violins represent distribution of mobility on that day. Mobility is definied as the movement of people to point of interests (POI). We take median of average visits per day (to POIs) from pre-pandemic as our baseline. Then we calcualte change in mobility in a day relative to the baseline. Here, we could access the data for only February to model our baseline, however the article uses data from September to February. This could lead to changes in our plot, however it should produce similar trend.
-
-The data for baselines and post-pandemic mobility are saved in the file *mobility.Rdata*. 
 
 ### Plot for change in mobility relative to baseline
 
