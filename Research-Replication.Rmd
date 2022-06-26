@@ -59,7 +59,7 @@ tests_by_zcta <- read_csv(
 
 ## Variability in socioeconomic status among different zip codes in NYC
 
-We replicate heat maps from the original article that shows how socioeconomic factors vary among Zip codes in NYC.
+We replicate heat maps from the original article that show how socioeconomic factors vary among Zip codes in NYC.
 
 The resulting plot looks identical to the one plotted in the original article. 
 
@@ -239,7 +239,7 @@ The estimates from our multivariable model are close to what the original paper 
 
 ## Change in mobility relative to baseline
 
-Next, we plot the second plot from the article. The plot contains violin plolt for each day in March and April of 2020. The violins represent distribution of mobility on that day. Mobility is definied as the movement of people to point of interests (POI). We take median of average visits per day (to POIs) from pre-pandemic as our baseline. Then we calcualte change in mobility in a day relative to the baseline. Here, we could access the data for only February to model our baseline, however the article uses data from September to February. This could lead to changes in our plot, however it should produce similar trend.
+Next, we plot the second plot from the article. The plot contains violin plolt for each day in March and April of 2020. The violins represent distribution of mobility on that day. Mobility is definied as the movement of people to point of interests (POI). We take median of average visits per day (to POIs) from pre-pandemic as our baseline. Then we calculate change in mobility in a day relative to the baseline. Here, we could access the data for only February to model our baseline, however the article uses data from September to February. This could lead to changes in our plot, however it should produce similar trend.
 
 ### Plot for change in mobility relative to baseline
 
@@ -307,8 +307,8 @@ glance(model_ses_mob)
 
 ### Comparing R-squared values
 
-We find out that R-squared value for the model without change in mobility feature is 56% (57% in the original article). And after the addition of this feature, we still get the R-squared value of 56% (57% in the original article). Even though there is no considerable difference in these two multivariable models based on their R-squared values, we cannot conclude that change in mobility did not affect the COVID-19 positive cases. That is something the original article points out to claim that there is no effect. 
+We find out that R-squared value for the model without change in mobility feature is 56% (57% in the original article). And after the addition of this feature, we still get the R-squared value of 56% (57% in the original article). Even though there is no considerable difference in these two multivariable models based on their R-squared values, we cannot conclude that change in mobility did not affect the COVID-19 positive cases. That is something the original article points out to claim that there is no effect. R-squared is good at evaluating the scatter of the data points around the fitted regression line. So in these two regression models, we can say that the scatter of actual positivity cases around the predicted positivity cases is similar but we cannot say that the added feature has no effect on the response variable. We have to know the in-depth knowledge of mobility and COVID-19 positivity cases.
 
 ## Conclusion and Questions
 
-The original article did right calculations mostly, however its claim of change in mobility did not affect COVID-19 positive cases is misleading. The features studied seem to be less predictive because we obtain a model with low R-squared value. Doing more research on what factors might affect the COVID-19 positive cases and integrating them in the model could increase the predicitability or explain more variability in the response variable. Given the original research was conducted early in the pandemic, there might not have been sufficient information and data to conduct this research. And if we were to gather recent data we will need to consider other factors such as proportion of vaccinated population, which was absent during early months of the pandemic. We believe this factor alone would bring significant change in the model. We are also curious to know how this model would perform with more recent data on COVID-19 positive cases. It will also be interesting to understand variability on COVID-19 cases due to other means of transportation, for example majority of people in NYC commute by subway trains.
+The original article did right calculations mostly, however its claim of change in mobility did not affect COVID-19 positive cases is misleading. The original research was conducted early in the pandemic, so there might not have been sufficient information and data to conduct this research. If we were to gather recent data we will need to consider other factors such as proportion of vaccinated population, which was absent during early months of the pandemic. We believe this factor alone would bring significant change in the model. We are also curious to know how this model would perform with more recent data on COVID-19 positive cases. It will also be interesting to understand variability on COVID-19 cases due to other means of transportation, for example majority of people in NYC commute by subway trains.
